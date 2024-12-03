@@ -2,9 +2,11 @@ using System;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
+using System.Timers;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using CliWrap;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RoonApiLib;
@@ -17,7 +19,10 @@ public partial class MainWindow : Window
     private readonly string[] _zonesToMonitor;
     private readonly string _bindInterface;
     private readonly bool _fullScreen;
-    
+    private readonly string _screenOffCommand;
+    private readonly string _screenOnCommand;
+    private readonly bool _screenControlEnabled;
+        
     private readonly MainWindowViewModel _viewModel = new();
     private readonly ILoggerFactory _loggerFactory;
     private Discovery.Result? _core;
@@ -26,6 +31,8 @@ public partial class MainWindow : Window
     private readonly RoonApi.RoonRegister _roonRegister;
     private readonly string _myIpAddress;
     private string? _currentZoneId;
+    private readonly Timer _displayOffTimer;
+    private bool _isPlaying;
 
     public MainWindow()
     {
@@ -36,6 +43,12 @@ public partial class MainWindow : Window
         _zonesToMonitor = configuration["ZonesToMonitor"]!.Split(",", StringSplitOptions.TrimEntries);
         _bindInterface = configuration["BindInterface"]!;
         _fullScreen = bool.Parse(configuration["FullScreen"]!);
+        _screenControlEnabled = bool.Parse(configuration["ScreenControlEnabled"]!);
+        _screenOffCommand = configuration["ScreenOffCommand"]!;
+        _screenOnCommand = configuration["ScreenOnCommand"]!;
+        var delayOff = int.Parse(configuration["ScreenOffDelaySeconds"]!);
+        _displayOffTimer = new Timer(TimeSpan.FromSeconds(delayOff));
+        _displayOffTimer.Elapsed += TurnScreenOff;
         
         DataContext = _viewModel;
             
@@ -64,6 +77,15 @@ public partial class MainWindow : Window
                 RoonApi.ControlVolume, RoonApi.ControlSource
             }
         };
+    }
+
+    private async void TurnScreenOff(object? sender, ElapsedEventArgs e)
+    {
+        if (_screenControlEnabled)
+        {
+            await Cli.Wrap(_screenOffCommand)
+                .ExecuteAsync();
+        }
     }
 
     private string GetIpAddress()
@@ -150,6 +172,26 @@ public partial class MainWindow : Window
         {
             zone = zonesToMonitor.FirstOrDefault(z => z.ZoneId == _currentZoneId) 
                    ?? zonesToMonitor.FirstOrDefault();
+        }
+
+        var isPlaying = zone is {State: RoonApiTransport.EState.playing};
+        if (_isPlaying != isPlaying)
+        {
+            if (_isPlaying && !isPlaying)
+            {
+                //play => pause
+                _displayOffTimer.Start();
+            }
+            else
+            {
+                //pause => play
+                _displayOffTimer.Stop();
+                if (_screenControlEnabled)
+                {
+                    await Cli.Wrap(_screenOnCommand).ExecuteAsync();
+                }
+            }
+            _isPlaying = isPlaying;
         }
 
         _currentZoneId = zone?.ZoneId;
