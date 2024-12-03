@@ -37,47 +37,52 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
-        IConfiguration configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json")
-            .Build();
-
-        _zonesToMonitor = configuration["ZonesToMonitor"]!.Split(",", StringSplitOptions.TrimEntries);
-        _bindInterface = configuration["BindInterface"]!;
-        _fullScreen = bool.Parse(configuration["FullScreen"]!);
-        _screenControlEnabled = bool.Parse(configuration["ScreenControlEnabled"]!);
-        _screenOffCommand = configuration["ScreenOffCommand"]!;
-        _screenOnCommand = configuration["ScreenOnCommand"]!;
-        var delayOff = int.Parse(configuration["ScreenOffDelaySeconds"]!);
-        _displayOffTimer = new Timer(TimeSpan.FromSeconds(delayOff));
-        _displayOffTimer.Elapsed += TurnScreenOff;
-        
-        DataContext = _viewModel;
-            
         InitializeComponent();
-
-        var appDir = AppDomain.CurrentDomain.BaseDirectory;
-
-        _loggerFactory = new LoggerFactory();
-        _api = new RoonApi(OnPaired, OnUnPaired, appDir, _loggerFactory.CreateLogger("RoonApi"));
-        _apiTransport = new RoonApiTransport(_api);
-        _myIpAddress = GetIpAddress();
-        _roonRegister = new RoonApi.RoonRegister
+        
+        if (!Avalonia.Controls.Design.IsDesignMode)
         {
-            DisplayName = $"StreamerDisplay@{Dns.GetHostName()}",
-            DisplayVersion = "1.0.0",
-            Publisher = "mones88",
-            Email = "mones88@gmail.com",
-            WebSite = "https://github.com/christian-riedl/roon-extension-test",
-            ExtensionId = "it.mones88.streamerdisplay",
-            Token = null,
-            OptionalServices = new string[0],
-            RequiredServices = new string[] {RoonApi.ServiceTransport, RoonApi.ServiceImage, RoonApi.ServiceBrowse,},
-            ProvidedServices = new string[]
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+            _zonesToMonitor = configuration["ZonesToMonitor"]!.Split(",", StringSplitOptions.TrimEntries);
+            _bindInterface = configuration["BindInterface"]!;
+            _fullScreen = bool.Parse(configuration["FullScreen"]!);
+            _screenControlEnabled = bool.Parse(configuration["ScreenControlEnabled"]!);
+            _screenOffCommand = configuration["ScreenOffCommand"]!;
+            _screenOnCommand = configuration["ScreenOnCommand"]!;
+            var delayOff = int.Parse(configuration["ScreenOffDelaySeconds"]!);
+            _displayOffTimer = new Timer(TimeSpan.FromSeconds(delayOff));
+            _displayOffTimer.Elapsed += TurnScreenOff;
+        
+            DataContext = _viewModel;
+            
+        
+
+            var appDir = AppDomain.CurrentDomain.BaseDirectory;
+
+            _loggerFactory = new LoggerFactory();
+            _api = new RoonApi(OnPaired, OnUnPaired, appDir, _loggerFactory.CreateLogger("RoonApi"));
+            _apiTransport = new RoonApiTransport(_api);
+            _myIpAddress = GetIpAddress();
+            _roonRegister = new RoonApi.RoonRegister
             {
-                RoonApi.ServiceStatus, RoonApi.ServicePairing, RoonApi.ServiceSettings, RoonApi.ServicePing,
-                RoonApi.ControlVolume, RoonApi.ControlSource
-            }
-        };
+                DisplayName = $"StreamerDisplay@{Dns.GetHostName()}",
+                DisplayVersion = "1.0.0",
+                Publisher = "mones88",
+                Email = "mones88@gmail.com",
+                WebSite = "https://github.com/christian-riedl/roon-extension-test",
+                ExtensionId = "it.mones88.streamerdisplay",
+                Token = null,
+                OptionalServices = new string[0],
+                RequiredServices = new string[] {RoonApi.ServiceTransport, RoonApi.ServiceImage, RoonApi.ServiceBrowse,},
+                ProvidedServices = new string[]
+                {
+                    RoonApi.ServiceStatus, RoonApi.ServicePairing, RoonApi.ServiceSettings, RoonApi.ServicePing,
+                    RoonApi.ControlVolume, RoonApi.ControlSource
+                }
+            };
+        }
     }
 
     private async void TurnScreenOff(object? sender, ElapsedEventArgs e)
@@ -153,12 +158,14 @@ public partial class MainWindow : Window
 
     async Task OnPaired(string coreId)
     {
+        _viewModel.IsConnectedToRoon = true;
         var zones = await _apiTransport.SubscribeZones(0, OnZooneChanged);
         Console.WriteLine($"OnPaired: {coreId} {zones}");
     }
 
     Task OnUnPaired(string coreId)
     {
+        _viewModel.IsConnectedToRoon = false;
         Console.WriteLine(coreId);
         return Task.CompletedTask;
     }

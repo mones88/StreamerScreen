@@ -6,16 +6,17 @@ using RoonApiLib;
 
 namespace StreamerScreen.ViewModels;
 
-public partial class MainWindowViewModel : ViewModelBase
+public class MainWindowViewModel : ViewModelBase
 {
-    private string? _zone;
-    private string? _artist;
-    private string? _album;
-    private string? _track;
-    private string? _imageKey;
-    private Task<Bitmap?>? _cover;
-    private int _totalSeconds;
-    private int _actualSeconds;
+    protected string? _zone;
+    protected string? _artist;
+    protected string? _album;
+    protected string? _track;
+    protected string? _imageKey;
+    protected Task<Bitmap?>? _cover;
+    protected int _totalSeconds;
+    protected int _actualSeconds;
+    protected bool _isConnectedToRoon;
 
     public string? Zone
     {
@@ -59,16 +60,17 @@ public partial class MainWindowViewModel : ViewModelBase
         set => _actualSeconds = value;
     }
 
-    public MainWindowViewModel()
+    public bool IsConnectedToRoon
     {
-        _zone = "Nessuna zona attiva";
-        _cover = Task.FromResult(ImageHelper.LoadFromResource(new Uri("avares://StreamerScreen/Assets/ui-cover.jpeg")));
-        _artist = "Genesis";
-        _album = "Foxtrot";
-        _track = "Beauty And The Beast";
-        _totalSeconds = 208;
-        _actualSeconds = 45;
+        get => _isConnectedToRoon;
+        set
+        {
+            if (value == _isConnectedToRoon) return;
+            _isConnectedToRoon = value;
+            OnPropertyChanged();
+        }
     }
+
 
     public async Task UpdateFromZone(RoonApiTransport.Zone? zone, Discovery.Result core)
     {
@@ -88,14 +90,31 @@ public partial class MainWindowViewModel : ViewModelBase
                 SetProperty(ref _album, zone.NowPlaying.ThreeLine.Line3, nameof(Album));
                 SetProperty(ref _track, zone.NowPlaying.ThreeLine.Line1, nameof(Track));
                 SetProperty(ref _totalSeconds, zone.NowPlaying.Length, nameof(TotalSeconds));
-                SetProperty(ref _actualSeconds, zone.NowPlaying.SeekPosition.GetValueOrDefault(), nameof(ActualSeconds));
+                SetProperty(ref _actualSeconds, zone.NowPlaying.SeekPosition.GetValueOrDefault(),
+                    nameof(ActualSeconds));
                 if (_imageKey != zone.NowPlaying.ImageKey && zone.NowPlaying.ImageKey != null)
                 {
                     _imageKey = zone.NowPlaying.ImageKey;
-                    var url = $"http://{core.CoreIPAddress}:{core.HttpPort}/api/image/{_imageKey}?scale=fit&width=800&height=600";
+                    var url =
+                        $"http://{core.CoreIPAddress}:{core.HttpPort}/api/image/{_imageKey}?scale=fit&width=800&height=600";
                     SetProperty(ref _cover, ImageHelper.LoadFromWeb(new Uri(url)), nameof(Cover));
                 }
             }
         }
+    }
+}
+
+public class MainWindowViewModelTestData : MainWindowViewModel
+{
+    public MainWindowViewModelTestData()
+    {
+        _zone = "Nessuna zona attiva";
+        _cover = Task.FromResult(ImageHelper.LoadFromResource(new Uri("avares://StreamerScreen/Assets/ui-cover.jpeg")));
+        _artist = "Genesis";
+        _album = "Foxtrot";
+        _track = "Beauty And The Beast";
+        _totalSeconds = 208;
+        _actualSeconds = 45;
+        _isConnectedToRoon = true;
     }
 }
