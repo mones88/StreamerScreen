@@ -17,7 +17,7 @@
     </Design.DataContext>
 
     <Panel>
-        <Image Source="{Binding Cover^}" Stretch="UniformToFill" Effect="blur(60)"></Image>
+        <Image Source="{Binding Cover^}" Stretch="UniformToFill" Effect="blur(60)" Margin="-50"></Image>
         <Panel Background="Black" Opacity="0.3"></Panel>
 
         <Grid ColumnDefinitions="*, 1.5*" RowDefinitions="*,Auto" Margin="12, 12, 12, 0"
