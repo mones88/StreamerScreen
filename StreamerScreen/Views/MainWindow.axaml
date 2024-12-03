@@ -25,15 +25,15 @@
             <Style Selector="TextBlock">
                 <Setter Property="Foreground" Value="White"></Setter>
             </Style>
-            <Style Selector="TextBlock.track">
+            <Style Selector="TextBlock.h1">
                 <Setter Property="FontSize" Value="48"></Setter>
                 <Setter Property="TextWrapping" Value="NoWrap"></Setter>
                 <Setter Property="FontWeight" Value="Bold"></Setter>
             </Style>
-            <Style Selector="TextBlock.album">
-                <Setter Property="FontSize" Value="24"></Setter>
+            <Style Selector="TextBlock.h2">
+                <Setter Property="FontSize" Value="36"></Setter>
             </Style>
-            <Style Selector="TextBlock.artist">
+            <Style Selector="TextBlock.h3">
                 <Setter Property="FontSize" Value="24"></Setter>
             </Style>
             <Style Selector="ScrollViewer">
@@ -51,8 +51,8 @@
         </Grid.Styles>
         
         <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Right">
-            <Image Source="avares://StreamerScreen/Assets/display_roon_icon.png" Height="30"></Image>
-            <TextBlock Text="{Binding Zone}" HorizontalAlignment="Center"/>
+            <Image Source="avares://StreamerScreen/Assets/display_roon_icon.png" Height="30" HorizontalAlignment="Right"></Image>
+            <TextBlock Text="{Binding Zone}" Classes="h3" />
         </StackPanel>
         
         
@@ -61,11 +61,11 @@
         <Panel Grid.Row="0" Grid.Column="1" Margin="12,0, 0, 0" VerticalAlignment="Center">
             <StackPanel  Orientation="Vertical">
                 <ScrollViewer AllowAutoHide="True" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
-                    <TextBlock Text="{Binding Track}" Classes="track" HorizontalAlignment="Left"/>    
+                    <TextBlock Text="{Binding Track}" Classes="h1" HorizontalAlignment="Left"/>    
                 </ScrollViewer>
                 
-                <TextBlock Text="{Binding Album}" Classes="album" HorizontalAlignment="Left"/>
-                <TextBlock Text="{Binding Artist}" Classes="artist" HorizontalAlignment="Left"/>
+                <TextBlock Text="{Binding Album}" Classes="h2" HorizontalAlignment="Left"/>
+                <TextBlock Text="{Binding Artist}" Classes="h2" HorizontalAlignment="Left"/>
             
             </StackPanel>
         </Panel>

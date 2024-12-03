@@ -16,7 +16,8 @@ public partial class MainWindow : Window
 {
     private readonly string[] _zonesToMonitor;
     private readonly string _bindInterface;
-
+    private readonly bool _fullScreen;
+    
     private readonly MainWindowViewModel _viewModel = new();
     private readonly ILoggerFactory _loggerFactory;
     private Discovery.Result? _core;
@@ -34,6 +35,7 @@ public partial class MainWindow : Window
 
         _zonesToMonitor = configuration["ZonesToMonitor"]!.Split(",", StringSplitOptions.TrimEntries);
         _bindInterface = configuration["BindInterface"]!;
+        _fullScreen = bool.Parse(configuration["FullScreen"]!);
         
         DataContext = _viewModel;
             
@@ -89,6 +91,11 @@ public partial class MainWindow : Window
             await DiscoverCore();
             await Task.Run(() => _api.StartReceiver(_core!.CoreIPAddress, _core.HttpPort, _roonRegister));
         });
+
+        if (_fullScreen)
+        {
+            WindowState = WindowState.FullScreen;
+        }
     }
 
 
