@@ -14,6 +14,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private string? _track;
     private string? _imageKey;
     private Task<Bitmap?>? _cover;
+    private int _totalSeconds;
+    private int _actualSeconds;
 
     public string? Zone
     {
@@ -45,6 +47,18 @@ public partial class MainWindowViewModel : ViewModelBase
         set => _cover = value;
     }
 
+    public int TotalSeconds
+    {
+        get => _totalSeconds;
+        set => _totalSeconds = value;
+    }
+
+    public int ActualSeconds
+    {
+        get => _actualSeconds;
+        set => _actualSeconds = value;
+    }
+
     public MainWindowViewModel()
     {
         _zone = "Nessuna zona attiva";
@@ -52,6 +66,8 @@ public partial class MainWindowViewModel : ViewModelBase
         _artist = "Genesis";
         _album = "Foxtrot";
         _track = "Supper's Ready";
+        _totalSeconds = 208;
+        _actualSeconds = 45;
     }
 
     public async Task UpdateFromZone(RoonApiTransport.Zone? zone, Discovery.Result core)
@@ -71,6 +87,8 @@ public partial class MainWindowViewModel : ViewModelBase
                 SetProperty(ref _artist, zone.NowPlaying.ThreeLine.Line2, nameof(Artist));
                 SetProperty(ref _album, zone.NowPlaying.ThreeLine.Line3, nameof(Album));
                 SetProperty(ref _track, zone.NowPlaying.ThreeLine.Line1, nameof(Track));
+                SetProperty(ref _totalSeconds, zone.NowPlaying.Length, nameof(TotalSeconds));
+                SetProperty(ref _actualSeconds, zone.NowPlaying.SeekPosition.GetValueOrDefault(), nameof(ActualSeconds));
                 if (_imageKey != zone.NowPlaying.ImageKey && zone.NowPlaying.ImageKey != null)
                 {
                     _imageKey = zone.NowPlaying.ImageKey;
