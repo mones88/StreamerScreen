@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RoonApiLib;
 using StreamerScreen.ViewModels;
@@ -13,8 +14,8 @@ namespace StreamerScreen.Views;
 
 public partial class MainWindow : Window
 {
-    private static readonly string[] ZonesToMonitor = ["SMSL DO300 RAAT", "SMSL DO300 HQ"];
-    private const string BindInterface = "en0";
+    private readonly string[] _zonesToMonitor;
+    private readonly string _bindInterface;
 
     private readonly MainWindowViewModel _viewModel = new();
     private readonly ILoggerFactory _loggerFactory;
@@ -27,6 +28,13 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json")
+            .Build();
+
+        _zonesToMonitor = configuration["ZonesToMonitor"]!.Split(",", StringSplitOptions.TrimEntries);
+        _bindInterface = configuration["BindInterface"]!;
+        
         DataContext = _viewModel;
             
         InitializeComponent();
@@ -56,10 +64,10 @@ public partial class MainWindow : Window
         };
     }
 
-    private static string GetIpAddress()
+    private string GetIpAddress()
     {
         var ni = NetworkInterface.GetAllNetworkInterfaces()
-            .Single(x => x.Name == BindInterface);
+            .Single(x => x.Name == _bindInterface);
         
         foreach (var ip in ni.GetIPProperties().UnicastAddresses)
         {
@@ -127,7 +135,7 @@ public partial class MainWindow : Window
     {
         var zonesToMonitor = (changedZones.ZonesAdded ?? [])
             .Union(changedZones.ZonesChanged ?? [])
-            .Where(z => ZonesToMonitor.Contains(z.DisplayName))
+            .Where(z => _zonesToMonitor.Contains(z.DisplayName))
             .ToArray();
         
         var zone = zonesToMonitor.FirstOrDefault(z => z.State == RoonApiTransport.EState.playing);
