@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using System.Timers;
@@ -62,7 +63,7 @@ public partial class MainWindow : Window
         _myIpAddress = GetIpAddress();
         _roonRegister = new RoonApi.RoonRegister
         {
-            DisplayName = "Streamer Display",
+            DisplayName = $"StreamerDisplay@{Dns.GetHostName()}",
             DisplayVersion = "1.0.0",
             Publisher = "mones88",
             Email = "mones88@gmail.com",
