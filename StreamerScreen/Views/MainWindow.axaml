@@ -17,7 +17,7 @@
     </Design.DataContext>
 
     <Panel>
-        <Image Source="{Binding Cover^}" Stretch="UniformToFill" Effect="blur(60)" Margin="-50"></Image>
+        <Image Source="{Binding Cover^}" Stretch="UniformToFill" Effect="blur(60)" Margin="-40"></Image>
         <Panel Background="Black" Opacity="0.3"></Panel>
 
         <Grid ColumnDefinitions="*, 1.5*" RowDefinitions="*,Auto" Margin="12, 12, 12, 0"
@@ -39,7 +39,7 @@
                 </Style>
                 <Style Selector="ScrollViewer">
                     <Style.Animations>
-                        <Animation Duration="0:0:15" IterationCount="INFINITE" DelayBetweenIterations="0:0:10">
+                        <Animation Duration="0:0:15" IterationCount="INFINITE" DelayBetweenIterations="0:0:0">
                             <KeyFrame Cue="0%">
                                 <Setter Property="Offset" Value="0,0"></Setter>
                             </KeyFrame>

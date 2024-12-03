@@ -83,7 +83,9 @@ public partial class MainWindow : Window
     {
         if (_screenControlEnabled)
         {
-            await Cli.Wrap(_screenOffCommand)
+            _displayOffTimer.Stop();
+            await Cli.Wrap("/usr/bin/xrandr")
+                .WithArguments(_screenOffCommand)
                 .ExecuteAsync();
         }
     }
@@ -188,7 +190,8 @@ public partial class MainWindow : Window
                 _displayOffTimer.Stop();
                 if (_screenControlEnabled)
                 {
-                    await Cli.Wrap(_screenOnCommand).ExecuteAsync();
+                    await Cli.Wrap("/usr/bin/xrandr")
+                        .WithArguments(_screenOnCommand).ExecuteAsync();
                 }
             }
             _isPlaying = isPlaying;

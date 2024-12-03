@@ -65,7 +65,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _cover = Task.FromResult(ImageHelper.LoadFromResource(new Uri("avares://StreamerScreen/Assets/ui-cover.jpeg")));
         _artist = "Genesis";
         _album = "Foxtrot";
-        _track = "Supper's Ready";
+        _track = "Beauty And The Beast";
         _totalSeconds = 208;
         _actualSeconds = 45;
     }
