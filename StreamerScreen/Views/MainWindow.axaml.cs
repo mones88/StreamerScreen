@@ -1,13 +1,17 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using System.Timers;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CliWrap;
+using MaterialColorUtilities.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RoonApiLib;
@@ -35,6 +39,8 @@ public partial class MainWindow : Window
     private readonly Timer _displayOffTimer;
     private bool _isPlaying;
 
+    
+    
     public MainWindow()
     {
         InitializeComponent();
@@ -131,7 +137,7 @@ public partial class MainWindow : Window
 
     async Task DiscoverCore(string? coreName = null)
     {
-        Discovery discovery = new Discovery(_myIpAddress, 10000, _loggerFactory.CreateLogger("Discovery"));
+        Discovery discovery = new Discovery(_myIpAddress, 5000, _loggerFactory.CreateLogger("Discovery"));
         var coreList = await discovery.QueryServiceId((res) =>
         {
             if (coreName != null && res.CoreName == coreName)
@@ -206,6 +212,8 @@ public partial class MainWindow : Window
         }
 
         _currentZoneId = zone?.ZoneId;
-        await _viewModel.UpdateFromZone(zone, _core!);
+        
+        Dispatcher.UIThread.Post(async () => await _viewModel.UpdateFromZone(zone, _core!));
+        
     }
 }

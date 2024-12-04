@@ -53,7 +53,7 @@
         </StackPanel>
 
         <Panel IsVisible="{Binding IsConnectedToRoon}">
-            <Image Source="{Binding Cover^}" Stretch="UniformToFill" Classes="bg"></Image>
+            <Image Source="{Binding Cover}" Stretch="UniformToFill" Classes="bg"></Image>
             <Panel Background="Black" Opacity="0.4"></Panel>
 
             <Grid ColumnDefinitions="*, 1.5*" RowDefinitions="*,Auto" Margin="12, 12, 12, 0"
@@ -82,7 +82,7 @@
                 </StackPanel>
 
 
-                <Image Grid.Row="0" Grid.Column="0" Source="{Binding Cover^}" MaxWidth="800"></Image>
+                <Image Grid.Row="0" Grid.Column="0" Source="{Binding Cover}" MaxWidth="800"></Image>
 
                 <Panel Grid.Row="0" Grid.Column="1" Margin="12,0, 0, 0" VerticalAlignment="Center">
                     <StackPanel Orientation="Vertical">
@@ -100,7 +100,7 @@
                 <ProgressBar Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="-12,0"
                              Maximum="{Binding TotalSeconds}"
                              Value="{Binding ActualSeconds}"
-                             Background="Transparent" Foreground="#7179ED" Height="10" />
+                             Background="Transparent" Foreground="{Binding ProgressColor}" Height="10" />
             </Grid>
         </Panel>
     </Panel>
