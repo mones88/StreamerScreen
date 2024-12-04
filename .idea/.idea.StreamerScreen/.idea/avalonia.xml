@@ -3,6 +3,7 @@
   <component name="AvaloniaProject">
     <option name="projectPerEditor">
       <map>
+        <entry key="StreamerScreen/Controls/ScrollableTextBlock.axaml" value="StreamerScreen/StreamerScreen.csproj" />
         <entry key="StreamerScreen/Views/MainWindow.axaml" value="StreamerScreen/StreamerScreen.csproj" />
       </map>
     </option>

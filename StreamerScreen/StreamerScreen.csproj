@@ -39,4 +39,8 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>
+
+    <ItemGroup>
+      <UpToDateCheckInput Remove="Controls\ScrollableTextBlock.axaml" />
+    </ItemGroup>
 </Project>

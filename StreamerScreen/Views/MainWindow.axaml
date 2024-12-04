@@ -16,13 +16,57 @@
         <vm:MainWindowViewModelTestData />
     </Design.DataContext>
 
+    <Window.Resources>
+        <Animation
+            x:Key="TrackAnimation"
+            x:SetterTargetType="ScrollViewer"
+            Duration="0:0:15" IterationCount="1">
+            <KeyFrame Cue="0%">
+                <Setter Property="Offset" Value="0,0"></Setter>
+            </KeyFrame>
+            <KeyFrame Cue="100%">
+                <Setter Property="Offset" Value="300,0"></Setter>
+            </KeyFrame>
+        </Animation>
+        <Animation
+            x:Key="TrackTextResetAnimation"
+            x:SetterTargetType="ScrollViewer"
+            Duration="0:0:2" IterationCount="1">
+            <KeyFrame Cue="0%">
+                <Setter Property="Opacity" Value="1"></Setter>
+            </KeyFrame>
+            <KeyFrame Cue="50%">
+                <Setter Property="Opacity" Value="0"></Setter>
+            </KeyFrame>
+            <KeyFrame Cue="100%">
+                <Setter Property="Opacity" Value="1"></Setter>
+            </KeyFrame>
+        </Animation>
+    </Window.Resources>
+
     <Window.Styles>
+        <!--<Style Selector="ScrollViewer">
+            <Style.Animations>
+                <Animation
+                    Duration="0:0:2" IterationCount="1">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="1"></Setter>
+                    </KeyFrame>
+                    <KeyFrame Cue="50%">
+                        <Setter Property="Opacity" Value="0"></Setter>
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1"></Setter>
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>-->
         <Style Selector="Image.bg">
             <Setter Property="Effect" Value="blur(60)"></Setter>
             <Style.Animations>
-                <Animation Duration="0:0:5">
+                <Animation Duration="0:0:10" IterationCount="INFINITE" PlaybackDirection="Alternate">
                     <KeyFrame Cue="0%">
-                        <Setter Property="Margin" Value="0"></Setter>
+                        <Setter Property="Margin" Value="-5"></Setter>
                     </KeyFrame>
                     <KeyFrame Cue="100%">
                         <Setter Property="Margin" Value="-40"></Setter>
@@ -48,8 +92,9 @@
 
     <Panel Background="#1F1F1F">
         <StackPanel Orientation="Vertical" IsVisible="{Binding !IsConnectedToRoon}" VerticalAlignment="Center">
-            <Image Source="avares://StreamerScreen/Assets/display_roon_icon.png" Height="80" HorizontalAlignment="Center"/>
-            <TextBlock Text="avvio in corso.." Classes="h3" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+            <Image Source="avares://StreamerScreen/Assets/display_roon_icon.png" Height="80"
+                   HorizontalAlignment="Center" />
+            <TextBlock Text="avvio in corso.." Classes="h3" HorizontalAlignment="Center" Margin="0,12,0,0" />
         </StackPanel>
 
         <Panel IsVisible="{Binding IsConnectedToRoon}">
@@ -58,21 +103,6 @@
 
             <Grid ColumnDefinitions="*, 1.5*" RowDefinitions="*,Auto" Margin="12, 12, 12, 0"
                   RenderOptions.BitmapInterpolationMode="HighQuality">
-                <Grid.Styles>
-
-                    <Style Selector="ScrollViewer">
-                        <Style.Animations>
-                            <Animation Duration="0:0:15" IterationCount="INFINITE" DelayBetweenIterations="0:0:0">
-                                <KeyFrame Cue="0%">
-                                    <Setter Property="Offset" Value="0,0"></Setter>
-                                </KeyFrame>
-                                <KeyFrame Cue="100%">
-                                    <Setter Property="Offset" Value="300,0"></Setter>
-                                </KeyFrame>
-                            </Animation>
-                        </Style.Animations>
-                    </Style>
-                </Grid.Styles>
 
                 <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Right">
                     <Image Source="avares://StreamerScreen/Assets/display_roon_icon.png" Height="30"
@@ -84,15 +114,16 @@
 
                 <Image Grid.Row="0" Grid.Column="0" Source="{Binding Cover}" MaxWidth="800"></Image>
 
-                <Panel Grid.Row="0" Grid.Column="1" Margin="12,0, 0, 0" VerticalAlignment="Center">
+                <Panel Grid.Row="0" Grid.Column="1" Margin="12,0, 0, 0" VerticalAlignment="Center" Name="TrackInfoPanel">
                     <StackPanel Orientation="Vertical">
                         <ScrollViewer AllowAutoHide="True" HorizontalScrollBarVisibility="Hidden"
-                                      VerticalScrollBarVisibility="Disabled">
-                            <TextBlock Text="{Binding Track}" Classes="h1" HorizontalAlignment="Left" />
+                                      VerticalScrollBarVisibility="Disabled" Name="TrackScrollViewer">
+                            <TextBlock Text="{Binding Track}" Name="TrackTextBlock" Classes="h1" HorizontalAlignment="Left"
+                                       SizeChanged="TrackTextBlock_OnSizeChanged"/>
                         </ScrollViewer>
 
-                        <TextBlock Text="{Binding Album}" Classes="h2" HorizontalAlignment="Left" />
-                        <TextBlock Text="{Binding Artist}" Classes="h2" HorizontalAlignment="Left" />
+                        <TextBlock Text="{Binding Album}" Classes="h2" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Artist}" Classes="h2" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" />
 
                     </StackPanel>
                 </Panel>

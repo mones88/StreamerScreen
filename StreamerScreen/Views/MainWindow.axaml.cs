@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -6,9 +7,11 @@ using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using System.Timers;
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using CliWrap;
 using MaterialColorUtilities.Utils;
@@ -27,8 +30,12 @@ public partial class MainWindow : Window
     private readonly string _screenOffCommand;
     private readonly string _screenOnCommand;
     private readonly bool _screenControlEnabled;
-        
-    private readonly MainWindowViewModel _viewModel = new();
+
+    private readonly Animation _trackAnimation;
+    private readonly Animation _trackTextResetAnimation;
+    private readonly Timer _animationTimer;
+
+    private readonly MainWindowViewModel _viewModel;
     private readonly ILoggerFactory _loggerFactory;
     private Discovery.Result? _core;
     private readonly RoonApi _api;
@@ -39,12 +46,10 @@ public partial class MainWindow : Window
     private readonly Timer _displayOffTimer;
     private bool _isPlaying;
 
-    
-    
     public MainWindow()
     {
         InitializeComponent();
-        
+
         if (!Avalonia.Controls.Design.IsDesignMode)
         {
             IConfiguration configuration = new ConfigurationBuilder()
@@ -60,10 +65,15 @@ public partial class MainWindow : Window
             var delayOff = int.Parse(configuration["ScreenOffDelaySeconds"]!);
             _displayOffTimer = new Timer(TimeSpan.FromSeconds(delayOff));
             _displayOffTimer.Elapsed += TurnScreenOff;
-        
+
+            _viewModel = new();
             DataContext = _viewModel;
-            
-        
+
+            _trackAnimation = (Animation) Resources["TrackAnimation"]!;
+            _trackTextResetAnimation = (Animation) Resources["TrackTextResetAnimation"]!;
+            _animationTimer = new Timer();
+            _animationTimer.Elapsed += Animate;
+            _animationTimer.AutoReset = true;
 
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
 
@@ -81,7 +91,8 @@ public partial class MainWindow : Window
                 ExtensionId = "it.mones88.streamerdisplay",
                 Token = null,
                 OptionalServices = new string[0],
-                RequiredServices = new string[] {RoonApi.ServiceTransport, RoonApi.ServiceImage, RoonApi.ServiceBrowse,},
+                RequiredServices =
+                    new string[] {RoonApi.ServiceTransport, RoonApi.ServiceImage, RoonApi.ServiceBrowse,},
                 ProvidedServices = new string[]
                 {
                     RoonApi.ServiceStatus, RoonApi.ServicePairing, RoonApi.ServiceSettings, RoonApi.ServicePing,
@@ -89,6 +100,12 @@ public partial class MainWindow : Window
                 }
             };
         }
+    }
+
+    private void Animate(object? sender, ElapsedEventArgs e)
+    {
+        //Dispatcher.UIThread.Post(() => _trackTextResetAnimation.RunAsync(TrackScrollViewer));
+        Dispatcher.UIThread.Post(() => _trackAnimation.RunAsync(TrackScrollViewer));
     }
 
     private async void TurnScreenOff(object? sender, ElapsedEventArgs e)
@@ -106,7 +123,7 @@ public partial class MainWindow : Window
     {
         var ni = NetworkInterface.GetAllNetworkInterfaces()
             .Single(x => x.Name == _bindInterface);
-        
+
         foreach (var ip in ni.GetIPProperties().UnicastAddresses)
         {
             if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
@@ -182,11 +199,11 @@ public partial class MainWindow : Window
             .Union(changedZones.ZonesChanged ?? [])
             .Where(z => _zonesToMonitor.Contains(z.DisplayName))
             .ToArray();
-        
+
         var zone = zonesToMonitor.FirstOrDefault(z => z.State == RoonApiTransport.EState.playing);
         if (zone == null)
         {
-            zone = zonesToMonitor.FirstOrDefault(z => z.ZoneId == _currentZoneId) 
+            zone = zonesToMonitor.FirstOrDefault(z => z.ZoneId == _currentZoneId)
                    ?? zonesToMonitor.FirstOrDefault();
         }
 
@@ -208,12 +225,39 @@ public partial class MainWindow : Window
                         .WithArguments(_screenOnCommand).ExecuteAsync();
                 }
             }
+
             _isPlaying = isPlaying;
         }
 
         _currentZoneId = zone?.ZoneId;
-        
+
         Dispatcher.UIThread.Post(async () => await _viewModel.UpdateFromZone(zone, _core!));
-        
+    }
+
+    private async void TrackTextBlock_OnSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (Design.IsDesignMode) return;
+
+        Console.WriteLine($"Animation timer stopped");
+        _animationTimer.Stop();
+
+        var txtBlock = (TextBlock) sender!;
+        var maxSize = e.NewSize.Width - TrackScrollViewer.Bounds.Width;
+        if (!string.IsNullOrEmpty(txtBlock.Text) && maxSize > 10)
+        {
+            var keyframe = _trackAnimation.Children.Last();
+            var setter = (Setter) keyframe.Setters.First();
+            setter.Value = new Vector(maxSize, 0);
+            
+            var animationLengthInSeconds = maxSize / 20;
+            _trackAnimation.Duration = TimeSpan.FromSeconds(animationLengthInSeconds);
+            Console.WriteLine($"Animation timer interval = {animationLengthInSeconds}");
+
+            Dispatcher.UIThread.Post(() => _trackAnimation.RunAsync(TrackScrollViewer));
+
+            _animationTimer.Interval = 1000 * (animationLengthInSeconds + 2);
+            _animationTimer.Start();
+            Console.WriteLine($"Animation timer started");
+        }
     }
 }

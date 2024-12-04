@@ -3,6 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Animation;
+using Avalonia.Controls;
 using Avalonia.Controls.Converters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
@@ -25,7 +27,7 @@ public class MainWindowViewModel : ViewModelBase
     protected int _actualSeconds;
     protected bool _isConnectedToRoon;
     protected Brush _progressColor;
-
+    
     public string? Zone
     {
         get => _zone;
@@ -162,7 +164,7 @@ public class MainWindowViewModelTestData : MainWindowViewModel
         _zone = "Nessuna zona attiva";
         _artist = "Genesis";
         _album = "Foxtrot";
-        _track = "Beauty And The Beast";
+        _track = "Hope Is a Dangerous Thing for a Woman Like Me to Have - but I have It";
         _totalSeconds = 208;
         _actualSeconds = 45;
         _isConnectedToRoon = true;
