@@ -224,7 +224,8 @@ namespace RoonApiLib
                     await Task.Delay(60000);
                 _requests.Clear();
             } while (!_cancellationTokenSource.IsCancellationRequested);
-            _logger.LogError("ReceiveLoop exit");    
+            _logger.LogError("ReceiveLoop exit");   
+            Console.WriteLine("ReceiveLoop exit");
         }
 
         public async Task<RoonReply> GetRegistryInfo ()

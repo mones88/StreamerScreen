@@ -11,5 +11,19 @@
   
     <Application.Styles>
         <FluentTheme />
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="White"></Setter>
+        </Style>
+        <Style Selector="TextBlock.h1">
+            <Setter Property="FontSize" Value="48"></Setter>
+            <Setter Property="TextWrapping" Value="NoWrap"></Setter>
+            <Setter Property="FontWeight" Value="Bold"></Setter>
+        </Style>
+        <Style Selector="TextBlock.h2">
+            <Setter Property="FontSize" Value="36"></Setter>
+        </Style>
+        <Style Selector="TextBlock.h3">
+            <Setter Property="FontSize" Value="24"></Setter>
+        </Style>
     </Application.Styles>
 </Application>

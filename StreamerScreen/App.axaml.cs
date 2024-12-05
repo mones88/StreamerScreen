@@ -4,6 +4,8 @@ using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.Configuration;
+using StreamerScreen.Models;
 using StreamerScreen.ViewModels;
 using StreamerScreen.Views;
 
@@ -11,6 +13,17 @@ namespace StreamerScreen;
 
 public partial class App : Application
 {
+    public static Settings Settings = default!;
+    
+    public App()
+    {
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json")
+            .Build();
+        
+        Settings = configuration.GetRequiredSection("Settings").Get<Settings>()!;
+    }
+    
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);

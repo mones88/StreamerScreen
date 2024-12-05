@@ -11,128 +11,13 @@
         Width="800" Height="600">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModelTestData />
     </Design.DataContext>
-
-    <Window.Resources>
-        <Animation
-            x:Key="TrackAnimation"
-            x:SetterTargetType="ScrollViewer"
-            Duration="0:0:15" IterationCount="1">
-            <KeyFrame Cue="0%">
-                <Setter Property="Offset" Value="0,0"></Setter>
-            </KeyFrame>
-            <KeyFrame Cue="100%">
-                <Setter Property="Offset" Value="300,0"></Setter>
-            </KeyFrame>
-        </Animation>
-        <Animation
-            x:Key="TrackTextResetAnimation"
-            x:SetterTargetType="ScrollViewer"
-            Duration="0:0:2" IterationCount="1">
-            <KeyFrame Cue="0%">
-                <Setter Property="Opacity" Value="1"></Setter>
-            </KeyFrame>
-            <KeyFrame Cue="50%">
-                <Setter Property="Opacity" Value="0"></Setter>
-            </KeyFrame>
-            <KeyFrame Cue="100%">
-                <Setter Property="Opacity" Value="1"></Setter>
-            </KeyFrame>
-        </Animation>
-    </Window.Resources>
-
-    <Window.Styles>
-        <!--<Style Selector="ScrollViewer">
-            <Style.Animations>
-                <Animation
-                    Duration="0:0:2" IterationCount="1">
-                    <KeyFrame Cue="0%">
-                        <Setter Property="Opacity" Value="1"></Setter>
-                    </KeyFrame>
-                    <KeyFrame Cue="50%">
-                        <Setter Property="Opacity" Value="0"></Setter>
-                    </KeyFrame>
-                    <KeyFrame Cue="100%">
-                        <Setter Property="Opacity" Value="1"></Setter>
-                    </KeyFrame>
-                </Animation>
-            </Style.Animations>
-        </Style>-->
-        <Style Selector="Image.bg">
-            <Setter Property="Effect" Value="blur(60)"></Setter>
-            <Style.Animations>
-                <Animation Duration="0:0:5" IterationCount="INFINITE" PlaybackDirection="Alternate">
-                    <KeyFrame Cue="0%">
-                        <Setter Property="Margin" Value="-5"></Setter>
-                    </KeyFrame>
-                    <KeyFrame Cue="100%">
-                        <Setter Property="Margin" Value="-40"></Setter>
-                    </KeyFrame>
-                </Animation>
-            </Style.Animations>
-        </Style>
-        <Style Selector="TextBlock">
-            <Setter Property="Foreground" Value="White"></Setter>
-        </Style>
-        <Style Selector="TextBlock.h1">
-            <Setter Property="FontSize" Value="48"></Setter>
-            <Setter Property="TextWrapping" Value="NoWrap"></Setter>
-            <Setter Property="FontWeight" Value="Bold"></Setter>
-        </Style>
-        <Style Selector="TextBlock.h2">
-            <Setter Property="FontSize" Value="36"></Setter>
-        </Style>
-        <Style Selector="TextBlock.h3">
-            <Setter Property="FontSize" Value="24"></Setter>
-        </Style>
-    </Window.Styles>
-
-    <Panel Background="#1F1F1F">
-        <StackPanel Orientation="Vertical" IsVisible="{Binding !IsConnectedToRoon}" VerticalAlignment="Center">
-            <Image Source="avares://StreamerScreen/Assets/display_roon_icon.png" Height="80"
-                   HorizontalAlignment="Center" />
-            <TextBlock Text="avvio in corso.." Classes="h3" HorizontalAlignment="Center" Margin="0,12,0,0" />
-        </StackPanel>
-
-        <Panel IsVisible="{Binding IsConnectedToRoon}">
-            <Image Source="{Binding Cover}" Stretch="UniformToFill" Classes="bg"></Image>
-            <Panel Background="Black" Opacity="0.4"></Panel>
-
-            <Grid ColumnDefinitions="*, 1.5*" RowDefinitions="*,Auto" Margin="12, 12, 12, 0"
-                  RenderOptions.BitmapInterpolationMode="HighQuality">
-
-                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Right">
-                    <Image Source="avares://StreamerScreen/Assets/display_roon_icon.png" Height="30"
-                           HorizontalAlignment="Right">
-                    </Image>
-                    <TextBlock Text="{Binding Zone}" Classes="h3" />
-                </StackPanel>
-
-
-                <Image Grid.Row="0" Grid.Column="0" Source="{Binding Cover}" MaxWidth="800"></Image>
-
-                <Panel Grid.Row="0" Grid.Column="1" Margin="12,0, 0, 0" VerticalAlignment="Center" Name="TrackInfoPanel">
-                    <StackPanel Orientation="Vertical">
-                        <ScrollViewer AllowAutoHide="True" HorizontalScrollBarVisibility="Hidden"
-                                      VerticalScrollBarVisibility="Disabled" Name="TrackScrollViewer">
-                            <TextBlock Text="{Binding Track}" Name="TrackTextBlock" Classes="h1" HorizontalAlignment="Left"
-                                       SizeChanged="TrackTextBlock_OnSizeChanged"/>
-                        </ScrollViewer>
-
-                        <TextBlock Text="{Binding Album}" Classes="h2" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="{Binding Artist}" Classes="h2" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" />
-
-                    </StackPanel>
-                </Panel>
-
-                <ProgressBar Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="-12,0"
-                             Maximum="{Binding TotalSeconds}"
-                             Value="{Binding ActualSeconds}"
-                             Background="Transparent" Foreground="{Binding ProgressColor}" Height="10" />
-            </Grid>
-        </Panel>
-    </Panel>
+    
+    <TransitioningContentControl Content="{Binding CurrentPage}">
+        <TransitioningContentControl.PageTransition>
+            <CrossFade Duration="0:00:00.500" />
+        </TransitioningContentControl.PageTransition>
+    </TransitioningContentControl>
+    
 </Window>

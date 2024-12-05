@@ -18,246 +18,99 @@ using MaterialColorUtilities.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RoonApiLib;
+using StreamerScreen.Models;
 using StreamerScreen.ViewModels;
 
 namespace StreamerScreen.Views;
 
 public partial class MainWindow : Window
 {
-    private readonly string[] _zonesToMonitor;
-    private readonly string _bindInterface;
-    private readonly bool _fullScreen;
-    private readonly string _screenOffCommand;
-    private readonly string _screenOnCommand;
-    private readonly bool _screenControlEnabled;
-
-    private readonly Animation _trackAnimation;
-    private readonly Animation _trackTextResetAnimation;
-    private readonly Timer _animationTimer;
-
     private readonly MainWindowViewModel _viewModel;
-    private readonly ILoggerFactory _loggerFactory;
-    private Discovery.Result? _core;
-    private readonly RoonApi _api;
-    private readonly RoonApiTransport _apiTransport;
-    private readonly RoonApi.RoonRegister _roonRegister;
-    private readonly string _myIpAddress;
-    private string? _currentZoneId;
+
     private readonly Timer _displayOffTimer;
-    private bool _isPlaying;
+
+    private RoonPlayStatus _lastRoonPlayStatus = RoonPlayStatus.Stopped;
 
     public MainWindow()
     {
         InitializeComponent();
 
-        if (!Avalonia.Controls.Design.IsDesignMode)
+        if (!Design.IsDesignMode)
         {
-            IConfiguration configuration = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json")
-                .Build();
-
-            _zonesToMonitor = configuration["ZonesToMonitor"]!.Split(",", StringSplitOptions.TrimEntries);
-            _bindInterface = configuration["BindInterface"]!;
-            _fullScreen = bool.Parse(configuration["FullScreen"]!);
-            _screenControlEnabled = bool.Parse(configuration["ScreenControlEnabled"]!);
-            _screenOffCommand = configuration["ScreenOffCommand"]!;
-            _screenOnCommand = configuration["ScreenOnCommand"]!;
-            var delayOff = int.Parse(configuration["ScreenOffDelaySeconds"]!);
-            _displayOffTimer = new Timer(TimeSpan.FromSeconds(delayOff));
-            _displayOffTimer.Elapsed += TurnScreenOff;
-
-            _viewModel = new();
+            _viewModel = new MainWindowViewModel();
             DataContext = _viewModel;
 
-            _trackAnimation = (Animation) Resources["TrackAnimation"]!;
-            _trackTextResetAnimation = (Animation) Resources["TrackTextResetAnimation"]!;
-            _animationTimer = new Timer();
-            _animationTimer.Elapsed += Animate;
-            _animationTimer.AutoReset = true;
 
-            var appDir = AppDomain.CurrentDomain.BaseDirectory;
+            RoonServiceAdapter.OnConnectedToRoon += OnConnectedToRoon;
+            RoonServiceAdapter.OnDisconnectedFromRoon += OnDisconnectedFromRoon;
+            RoonServiceAdapter.OnRoonStatusChanged += OnRoonStatusChanged;
+            RoonServiceAdapter.StartRoonService();
 
-            _loggerFactory = new LoggerFactory();
-            _api = new RoonApi(OnPaired, OnUnPaired, appDir, _loggerFactory.CreateLogger("RoonApi"));
-            _apiTransport = new RoonApiTransport(_api);
-            _myIpAddress = GetIpAddress();
-            _roonRegister = new RoonApi.RoonRegister
+            _displayOffTimer = new Timer(TimeSpan.FromSeconds(App.Settings.ScreenOffDelaySeconds));
+            _displayOffTimer.AutoReset = false;
+            _displayOffTimer.Elapsed += TurnScreenOff;
+        }
+    }
+
+    private async void OnRoonStatusChanged(RoonStatus newStatus)
+    {
+        if (_lastRoonPlayStatus != newStatus.RoonPlayStatus)
+        {
+            _lastRoonPlayStatus = newStatus.RoonPlayStatus;
+            
+            if (newStatus.RoonPlayStatus is RoonPlayStatus.Stopped or RoonPlayStatus.Paused)
             {
-                DisplayName = $"StreamerDisplay@{Dns.GetHostName()}",
-                DisplayVersion = "1.0.0",
-                Publisher = "mones88",
-                Email = "mones88@gmail.com",
-                WebSite = "https://github.com/christian-riedl/roon-extension-test",
-                ExtensionId = "it.mones88.streamerdisplay",
-                Token = null,
-                OptionalServices = new string[0],
-                RequiredServices =
-                    new string[] {RoonApi.ServiceTransport, RoonApi.ServiceImage, RoonApi.ServiceBrowse,},
-                ProvidedServices = new string[]
+                _viewModel.SetIdleState();
+                if (App.Settings.ScreenControlEnabled)
                 {
-                    RoonApi.ServiceStatus, RoonApi.ServicePairing, RoonApi.ServiceSettings, RoonApi.ServicePing,
-                    RoonApi.ControlVolume, RoonApi.ControlSource
+                    _displayOffTimer.Start();
                 }
-            };
-        }
-    }
-
-    private void Animate(object? sender, ElapsedEventArgs e)
-    {
-        //Dispatcher.UIThread.Post(() => _trackTextResetAnimation.RunAsync(TrackScrollViewer));
-        Dispatcher.UIThread.Post(() => _trackAnimation.RunAsync(TrackScrollViewer));
-    }
-
-    private async void TurnScreenOff(object? sender, ElapsedEventArgs e)
-    {
-        if (_screenControlEnabled)
-        {
-            _displayOffTimer.Stop();
-            await Cli.Wrap("/usr/bin/xrandr")
-                .WithArguments(_screenOffCommand)
-                .ExecuteAsync();
-        }
-    }
-
-    private string GetIpAddress()
-    {
-        var ni = NetworkInterface.GetAllNetworkInterfaces()
-            .Single(x => x.Name == _bindInterface);
-
-        foreach (var ip in ni.GetIPProperties().UnicastAddresses)
-        {
-            if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            }
+            else
             {
-                return ip.Address.ToString();
+                _displayOffTimer.Stop();
+                if (App.Settings.ScreenControlEnabled)
+                {
+                    await Cli.Wrap("/usr/bin/xrandr")
+                        .WithArguments(App.Settings.ScreenOnCommand ?? string.Empty).ExecuteAsync();
+                }
+
+                _viewModel.SetPlayingState();
             }
         }
 
-        throw new Exception();
+        if (newStatus.RoonPlayStatus == RoonPlayStatus.Playing && newStatus.ActiveZone != null)
+        {
+            await _viewModel.UpdateZoneData(newStatus);
+        }
     }
+
+    private void OnConnectedToRoon()
+    {
+        _viewModel.SetIdleState();
+    }
+
+    private void OnDisconnectedFromRoon()
+    {
+        _viewModel.SetDisconnectedState();
+    }
+
+
+    private async void TurnScreenOff(object? sender, ElapsedEventArgs e)
+    {
+        await Cli.Wrap("/usr/bin/xrandr")
+            .WithArguments(App.Settings.ScreenOffCommand ?? string.Empty)
+            .ExecuteAsync();
+    }
+
 
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
 
-        Task.Factory.StartNew(async () =>
-        {
-            await DiscoverCore();
-            await Task.Run(() => _api.StartReceiver(_core!.CoreIPAddress, _core.HttpPort, _roonRegister));
-        });
-
-        if (_fullScreen)
+        if (App.Settings.FullScreen)
         {
             WindowState = WindowState.FullScreen;
-        }
-    }
-
-
-    async Task DiscoverCore(string? coreName = null)
-    {
-        Discovery discovery = new Discovery(_myIpAddress, 5000, _loggerFactory.CreateLogger("Discovery"));
-        var coreList = await discovery.QueryServiceId((res) =>
-        {
-            if (coreName != null && res.CoreName == coreName)
-            {
-                _core = res;
-                return true;
-            }
-
-            return false;
-        });
-        if (_core == null)
-        {
-            if (coreList.Count == 1)
-            {
-                _core = coreList[0];
-            }
-            else
-            {
-                string corenames = string.Join(", ", coreList.Select((s) => s.CoreName));
-                throw new Exception("Multiple Roon Cores found");
-            }
-        }
-    }
-
-    async Task OnPaired(string coreId)
-    {
-        _viewModel.IsConnectedToRoon = true;
-        var zones = await _apiTransport.SubscribeZones(0, OnZooneChanged);
-        Console.WriteLine($"OnPaired: {coreId} {zones}");
-    }
-
-    Task OnUnPaired(string coreId)
-    {
-        _viewModel.IsConnectedToRoon = false;
-        Console.WriteLine(coreId);
-        return Task.CompletedTask;
-    }
-
-    async Task OnZooneChanged(RoonApiTransport.ChangedZoones changedZones)
-    {
-        var zonesToMonitor = (changedZones.ZonesAdded ?? [])
-            .Union(changedZones.ZonesChanged ?? [])
-            .Where(z => _zonesToMonitor.Contains(z.DisplayName))
-            .ToArray();
-
-        var zone = zonesToMonitor.FirstOrDefault(z => z.State == RoonApiTransport.EState.playing);
-        if (zone == null)
-        {
-            zone = zonesToMonitor.FirstOrDefault(z => z.ZoneId == _currentZoneId)
-                   ?? zonesToMonitor.FirstOrDefault();
-        }
-
-        var isPlaying = zone is {State: RoonApiTransport.EState.playing};
-        if (_isPlaying != isPlaying)
-        {
-            if (_isPlaying && !isPlaying)
-            {
-                //play => pause
-                _displayOffTimer.Start();
-            }
-            else
-            {
-                //pause => play
-                _displayOffTimer.Stop();
-                if (_screenControlEnabled)
-                {
-                    await Cli.Wrap("/usr/bin/xrandr")
-                        .WithArguments(_screenOnCommand).ExecuteAsync();
-                }
-            }
-
-            _isPlaying = isPlaying;
-        }
-
-        _currentZoneId = zone?.ZoneId;
-
-        Dispatcher.UIThread.Post(async () => await _viewModel.UpdateFromZone(zone, _core!));
-    }
-
-    private async void TrackTextBlock_OnSizeChanged(object? sender, SizeChangedEventArgs e)
-    {
-        if (Design.IsDesignMode) return;
-
-        Console.WriteLine($"Animation timer stopped");
-        _animationTimer.Stop();
-
-        var txtBlock = (TextBlock) sender!;
-        var maxSize = e.NewSize.Width - TrackScrollViewer.Bounds.Width;
-        if (!string.IsNullOrEmpty(txtBlock.Text) && maxSize > 10)
-        {
-            var keyframe = _trackAnimation.Children.Last();
-            var setter = (Setter) keyframe.Setters.First();
-            setter.Value = new Vector(maxSize, 0);
-            
-            var animationLengthInSeconds = maxSize / 20;
-            _trackAnimation.Duration = TimeSpan.FromSeconds(animationLengthInSeconds);
-            Console.WriteLine($"Animation timer interval = {animationLengthInSeconds}");
-
-            Dispatcher.UIThread.Post(() => _trackAnimation.RunAsync(TrackScrollViewer));
-
-            _animationTimer.Interval = 1000 * (animationLengthInSeconds + 2);
-            _animationTimer.Start();
-            Console.WriteLine($"Animation timer started");
         }
     }
 }

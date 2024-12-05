@@ -3,8 +3,14 @@
   <component name="AvaloniaProject">
     <option name="projectPerEditor">
       <map>
+        <entry key="StreamerScreen/App.axaml" value="StreamerScreen/StreamerScreen.csproj" />
         <entry key="StreamerScreen/Controls/ScrollableTextBlock.axaml" value="StreamerScreen/StreamerScreen.csproj" />
+        <entry key="StreamerScreen/ViewModels/SplashScreenView.axaml" value="StreamerScreen/StreamerScreen.csproj" />
+        <entry key="StreamerScreen/Views/AwaitingConnectionView.axaml" value="StreamerScreen/StreamerScreen.csproj" />
+        <entry key="StreamerScreen/Views/IdleView.axaml" value="StreamerScreen/StreamerScreen.csproj" />
         <entry key="StreamerScreen/Views/MainWindow.axaml" value="StreamerScreen/StreamerScreen.csproj" />
+        <entry key="StreamerScreen/Views/SplashScreenView.axaml" value="StreamerScreen/StreamerScreen.csproj" />
+        <entry key="StreamerScreen/Views/ZoneView.axaml" value="StreamerScreen/StreamerScreen.csproj" />
       </map>
     </option>
   </component>
