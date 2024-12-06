@@ -1,58 +1,142 @@
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Timer = System.Timers.Timer;
 
 namespace StreamerScreen.Views;
 
 public partial class ZoneView : UserControl
 {
-    private readonly Animation _trackAnimation;
-    private readonly Timer _animationTimer;
-    
+    private Animation? _trackAnimation;
+    private CancellationTokenSource? _trackAnimationCancellationTokenSource;
+
     public ZoneView()
     {
         InitializeComponent();
-        
-        _trackAnimation = (Animation)Resources["TrackAnimation"]!;
-        _animationTimer = new Timer();
-        _animationTimer.Elapsed += Animate;
-        _animationTimer.AutoReset = true;
     }
-    
-    private void Animate(object? sender, ElapsedEventArgs e)
+
+    private async Task Animate(CancellationToken cancellationToken)
     {
-        Dispatcher.UIThread.Post(() => _trackAnimation.RunAsync(TrackScrollViewer));
+        try
+        {
+            if (_trackAnimation == null)
+                return;
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                    _trackAnimation.RunAsync(TrackScrollViewer, cancellationToken));
+                //await Task.Delay(2000, cancellationToken);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
     }
-    
-    private async void TrackTextBlock_OnSizeChanged(object? sender, SizeChangedEventArgs e)
+
+    private void TrackTextBlock_OnSizeChanged(object? sender, SizeChangedEventArgs e)
     {
         if (Design.IsDesignMode) return;
 
-        Console.WriteLine($"Animation timer stopped");
-        _animationTimer.Stop();
+        if (_trackAnimationCancellationTokenSource != null)
+        {
+            _trackAnimationCancellationTokenSource.Cancel();
+        }
 
         var txtBlock = (TextBlock) sender!;
-        var maxSize = e.NewSize.Width - TrackScrollViewer.Bounds.Width;
-        if (!string.IsNullOrEmpty(txtBlock.Text) && maxSize > 10)
+        var maxScroll = e.NewSize.Width - TrackScrollViewer.DesiredSize.Width;
+        if (!string.IsNullOrEmpty(txtBlock.Text) && maxScroll > 10)
         {
-            var keyframe = _trackAnimation.Children.Last();
-            var setter = (Setter) keyframe.Setters.First();
-            setter.Value = new Vector(maxSize, 0);
-
-            var animationLengthInSeconds = maxSize / 20;
-            _trackAnimation.Duration = TimeSpan.FromSeconds(animationLengthInSeconds);
-            Console.WriteLine($"Animation timer interval = {animationLengthInSeconds}");
-
-            Dispatcher.UIThread.Post(() => _trackAnimation.RunAsync(TrackScrollViewer));
-
-            _animationTimer.Interval = 1000 * (animationLengthInSeconds + 2);
-            _animationTimer.Start();
-            Console.WriteLine($"Animation timer started");
+            _trackAnimationCancellationTokenSource?.Dispose();
+            _trackAnimationCancellationTokenSource = new CancellationTokenSource();
+            _trackAnimation = CreateTrackAnimation(maxScroll);
+            Task.Run(() => Animate(_trackAnimationCancellationTokenSource.Token));
         }
+    }
+
+    private static Animation CreateTrackAnimation(double maxScroll)
+    {
+        /*var animationLengthInSeconds = maxScroll / 20;
+        Console.WriteLine($"Track animation length (s) = {animationLengthInSeconds}");
+        return new Animation
+        {
+            Duration = TimeSpan.FromSeconds(animationLengthInSeconds),
+            Delay = TimeSpan.FromSeconds(2),
+            FillMode = FillMode.Forward,
+            IterationCount = new IterationCount(1),
+            Children =
+            {
+                new KeyFrame()
+                {
+                    Setters = {new Setter {Property = ScrollViewer.OffsetProperty, Value = new Vector(0, 0)}},
+                    Cue = new Cue(0)
+                },
+                new KeyFrame()
+                {
+                    Setters = {new Setter {Property = ScrollViewer.OffsetProperty, Value = new Vector(maxScroll, 0)}},
+                    Cue = new Cue(1)
+                }
+            }
+        };*/
+
+        var animationLengthInSeconds = (maxScroll / 20) + 2.5d;
+        Console.WriteLine($"Track animation length (s) = {animationLengthInSeconds}");
+        return new Animation
+        {
+            Duration = TimeSpan.FromSeconds(animationLengthInSeconds),
+            Delay = TimeSpan.FromSeconds(2),
+            FillMode = FillMode.Backward,
+            IterationCount = new IterationCount(1),
+            Children =
+            {
+                new KeyFrame()
+                {
+                    Setters =
+                    {
+                        new Setter {Property = ScrollViewer.OffsetProperty, Value = new Vector(0, 0)},
+                        new Setter {Property = ScrollViewer.OpacityProperty, Value = 1d},
+                    },
+                    KeyTime = TimeSpan.Zero
+                },
+                new KeyFrame()
+                {
+                    Setters =
+                    {
+                        new Setter {Property = ScrollViewer.OffsetProperty, Value = new Vector(maxScroll, 0)},
+                        new Setter {Property = ScrollViewer.OpacityProperty, Value = 1d}
+                    },
+                    KeyTime = TimeSpan.FromSeconds(animationLengthInSeconds - 2.5d)
+                },
+                new KeyFrame()
+                {
+                    Setters =
+                    {
+                        new Setter {Property = ScrollViewer.OffsetProperty, Value = new Vector(maxScroll, 0)},
+                        new Setter {Property = ScrollViewer.OpacityProperty, Value = 1d}
+                    },
+                    KeyTime = TimeSpan.FromSeconds(animationLengthInSeconds - 0.5d)
+                },
+                new KeyFrame()
+                {
+                    Setters =
+                    {
+                        new Setter {Property = ScrollViewer.OffsetProperty, Value = new Vector(maxScroll, 0)},
+                        new Setter {Property = ScrollViewer.OpacityProperty, Value = 0d}
+                    },
+                    KeyTime = TimeSpan.FromSeconds(animationLengthInSeconds)
+                }
+            }
+        };
     }
 }

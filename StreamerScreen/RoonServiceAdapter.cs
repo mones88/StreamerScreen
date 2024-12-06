@@ -19,7 +19,6 @@ public static class RoonServiceAdapter
     public static event Action? OnDisconnectedFromRoon;
     public static event Action<RoonStatus>? OnRoonStatusChanged;
 
-
     private static AsyncContextThread ServiceThread;
 
     private static Discovery.Result? _core;
@@ -167,7 +166,7 @@ public static class RoonServiceAdapter
 
         if (zone != null)
         {
-            Console.WriteLine($"OnZoneChanged {zone.DisplayName} {zone.State}");
+            //Console.WriteLine($"OnZoneChanged {zone.DisplayName} {zone.State}");
             
             RoonStatus.UpdateFromZoneData(zone);
             _latestZoneId = zone.ZoneId;
@@ -178,31 +177,5 @@ public static class RoonServiceAdapter
         }
         
         return Task.CompletedTask;
-
-        /*var isPlaying = zone is {State: RoonApiTransport.EState.playing};
-        if (_isPlaying != isPlaying)
-        {
-            if (_isPlaying && !isPlaying)
-            {
-                //play => pause
-                _displayOffTimer.Start();
-            }
-            else
-            {
-                //pause => play
-                _displayOffTimer.Stop();
-                if (_screenControlEnabled)
-                {
-                    await Cli.Wrap("/usr/bin/xrandr")
-                        .WithArguments(_screenOnCommand).ExecuteAsync();
-                }
-            }
-
-            _isPlaying = isPlaying;
-        }
-
-        _currentZoneId = zone?.ZoneId;
-
-        Dispatcher.UIThread.Post(async () => await _viewModel.UpdateFromZone(zone, _core!));*/
     }
 }

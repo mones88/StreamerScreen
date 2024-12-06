@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using Avalonia;
@@ -20,6 +21,8 @@ using Microsoft.Extensions.Logging;
 using RoonApiLib;
 using StreamerScreen.Models;
 using StreamerScreen.ViewModels;
+using Exception = System.Exception;
+using Timer = System.Timers.Timer;
 
 namespace StreamerScreen.Views;
 
@@ -27,7 +30,7 @@ public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
 
-    private readonly Timer _displayOffTimer;
+    private CancellationTokenSource? _ctGoToIdleState;
 
     private RoonPlayStatus _lastRoonPlayStatus = RoonPlayStatus.Stopped;
 
@@ -40,16 +43,78 @@ public partial class MainWindow : Window
             _viewModel = new MainWindowViewModel();
             DataContext = _viewModel;
 
-
             RoonServiceAdapter.OnConnectedToRoon += OnConnectedToRoon;
             RoonServiceAdapter.OnDisconnectedFromRoon += OnDisconnectedFromRoon;
             RoonServiceAdapter.OnRoonStatusChanged += OnRoonStatusChanged;
             RoonServiceAdapter.StartRoonService();
 
-            _displayOffTimer = new Timer(TimeSpan.FromSeconds(App.Settings.ScreenOffDelaySeconds));
-            _displayOffTimer.AutoReset = false;
-            _displayOffTimer.Elapsed += TurnScreenOff;
+            if (App.Settings.FullScreen)
+            {
+                WindowState = WindowState.FullScreen;
+            }
         }
+    }
+
+    private async Task SetIdleState(bool immediate, CancellationToken token)
+    {
+        try
+        {
+            Console.WriteLine("Going idle..");
+            if (!immediate)
+            {
+                Console.WriteLine("in 5 secs");
+                await Task.Delay(5000, token);
+            }
+
+            if (!token.IsCancellationRequested)
+            {
+                _viewModel.SetIdleState();
+            }
+
+            Console.WriteLine("Idle.");
+
+            if (App.Settings.ScreenControlEnabled)
+            {
+                if (App.Settings.ScreenLowBrightnessDelaySeconds > 0)
+                    await Task.Delay(App.Settings.ScreenLowBrightnessDelaySeconds * 1000, token);
+
+                if (!string.IsNullOrWhiteSpace(App.Settings.ScreenLowBrightenessCommand))
+                    await Cli.Wrap("/bin/bash")
+                        .WithArguments(App.Settings.ScreenLowBrightenessCommand)
+                        .ExecuteAsync(token);
+
+                if (App.Settings.ScreenOffDelaySeconds > 0)
+                    await Task.Delay(App.Settings.ScreenOffDelaySeconds * 1000, token);
+
+                await Cli.Wrap("/usr/bin/xrandr")
+                    .WithArguments(App.Settings.ScreenOffCommand ?? string.Empty)
+                    .ExecuteAsync(token);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            Console.WriteLine("Idle request aborted.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
+    }
+
+    private async Task SetPlayingState()
+    {
+        if (App.Settings.ScreenControlEnabled)
+        {
+            if (!string.IsNullOrWhiteSpace(App.Settings.ScreenNormalBrightnessCommad))
+                await Cli.Wrap("/bin/bash")
+                    .WithArguments(App.Settings.ScreenNormalBrightnessCommad)
+                    .ExecuteAsync();
+            
+            await Cli.Wrap("/usr/bin/xrandr")
+                .WithArguments(App.Settings.ScreenOnCommand ?? string.Empty).ExecuteAsync();
+        }
+
+        _viewModel.SetPlayingState();
     }
 
     private async void OnRoonStatusChanged(RoonStatus newStatus)
@@ -57,25 +122,17 @@ public partial class MainWindow : Window
         if (_lastRoonPlayStatus != newStatus.RoonPlayStatus)
         {
             _lastRoonPlayStatus = newStatus.RoonPlayStatus;
-            
+
             if (newStatus.RoonPlayStatus is RoonPlayStatus.Stopped or RoonPlayStatus.Paused)
             {
-                _viewModel.SetIdleState();
-                if (App.Settings.ScreenControlEnabled)
-                {
-                    _displayOffTimer.Start();
-                }
+                _ctGoToIdleState?.Dispose();
+                _ctGoToIdleState = new CancellationTokenSource();
+                Task.Run(() => SetIdleState(false, _ctGoToIdleState.Token));
             }
             else
             {
-                _displayOffTimer.Stop();
-                if (App.Settings.ScreenControlEnabled)
-                {
-                    await Cli.Wrap("/usr/bin/xrandr")
-                        .WithArguments(App.Settings.ScreenOnCommand ?? string.Empty).ExecuteAsync();
-                }
-
-                _viewModel.SetPlayingState();
+                _ctGoToIdleState?.Cancel();
+                await SetPlayingState();
             }
         }
 
@@ -85,32 +142,13 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnConnectedToRoon()
+    private async void OnConnectedToRoon()
     {
-        _viewModel.SetIdleState();
+        await SetIdleState(true, CancellationToken.None);
     }
 
     private void OnDisconnectedFromRoon()
     {
         _viewModel.SetDisconnectedState();
-    }
-
-
-    private async void TurnScreenOff(object? sender, ElapsedEventArgs e)
-    {
-        await Cli.Wrap("/usr/bin/xrandr")
-            .WithArguments(App.Settings.ScreenOffCommand ?? string.Empty)
-            .ExecuteAsync();
-    }
-
-
-    protected override void OnLoaded(RoutedEventArgs e)
-    {
-        base.OnLoaded(e);
-
-        if (App.Settings.FullScreen)
-        {
-            WindowState = WindowState.FullScreen;
-        }
     }
 }
