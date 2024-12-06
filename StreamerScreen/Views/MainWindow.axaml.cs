@@ -79,8 +79,8 @@ public partial class MainWindow : Window
                     await Task.Delay(App.Settings.ScreenLowBrightnessDelaySeconds * 1000, token);
 
                 if (!string.IsNullOrWhiteSpace(App.Settings.ScreenLowBrightenessCommand))
-                    await Cli.Wrap("/bin/bash")
-                        .WithArguments(App.Settings.ScreenLowBrightenessCommand)
+                    await Cli.Wrap("/usr/bin/bash")
+                        .WithArguments(["-c", App.Settings.ScreenLowBrightenessCommand])
                         .ExecuteAsync(token);
 
                 if (App.Settings.ScreenOffDelaySeconds > 0)
@@ -107,7 +107,7 @@ public partial class MainWindow : Window
         {
             if (!string.IsNullOrWhiteSpace(App.Settings.ScreenNormalBrightnessCommad))
                 await Cli.Wrap("/bin/bash")
-                    .WithArguments(App.Settings.ScreenNormalBrightnessCommad)
+                    .WithArguments(["-c", App.Settings.ScreenNormalBrightnessCommad])
                     .ExecuteAsync();
             
             await Cli.Wrap("/usr/bin/xrandr")
