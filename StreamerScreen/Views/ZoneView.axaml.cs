@@ -57,8 +57,8 @@ public partial class ZoneView : UserControl
         }
 
         var txtBlock = (TextBlock) sender!;
-        var scrollViewWidth = Math.Max(TrackScrollViewer.DesiredSize.Width, TrackScrollViewer.Width);
-        var maxScroll = e.NewSize.Width - scrollViewWidth;
+        var scrollViewWidth = Math.Max((int)TrackScrollViewer.DesiredSize.Width, (int)TrackScrollViewer.Width);
+        var maxScroll = (int)e.NewSize.Width - scrollViewWidth;
         Console.WriteLine($"lblSize = {e.NewSize.Width} - scroll = {TrackScrollViewer.DesiredSize.Width} - maxScroll = {maxScroll}");
         if (!string.IsNullOrEmpty(txtBlock.Text) && maxScroll > 10)
         {
