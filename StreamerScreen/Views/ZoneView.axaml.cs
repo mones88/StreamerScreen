@@ -34,9 +34,12 @@ public partial class ZoneView : UserControl
                 await Dispatcher.UIThread.InvokeAsync(() =>
                     _trackAnimation.RunAsync(TrackScrollViewer, cancellationToken));
             }
+            
+            Console.WriteLine("Track animation cancelled");
         }
         catch (TaskCanceledException)
         {
+            Console.WriteLine("Track animation cancelled ˆ");
         }
         catch (Exception ex)
         {
@@ -54,7 +57,9 @@ public partial class ZoneView : UserControl
         }
 
         var txtBlock = (TextBlock) sender!;
-        var maxScroll = e.NewSize.Width - TrackScrollViewer.DesiredSize.Width;
+        var scrollViewWidth = Math.Max(TrackScrollViewer.DesiredSize.Width, TrackScrollViewer.Width);
+        var maxScroll = e.NewSize.Width - scrollViewWidth;
+        Console.WriteLine($"lblSize = {e.NewSize.Width} - scroll = {TrackScrollViewer.DesiredSize.Width} - maxScroll = {maxScroll}");
         if (!string.IsNullOrEmpty(txtBlock.Text) && maxScroll > 10)
         {
             _trackAnimationCancellationTokenSource?.Dispose();
