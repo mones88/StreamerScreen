@@ -33,7 +33,6 @@ public partial class ZoneView : UserControl
             {
                 await Dispatcher.UIThread.InvokeAsync(() =>
                     _trackAnimation.RunAsync(TrackScrollViewer, cancellationToken));
-                //await Task.Delay(2000, cancellationToken);
             }
         }
         catch (TaskCanceledException)
@@ -67,29 +66,6 @@ public partial class ZoneView : UserControl
 
     private static Animation CreateTrackAnimation(double maxScroll)
     {
-        /*var animationLengthInSeconds = maxScroll / 20;
-        Console.WriteLine($"Track animation length (s) = {animationLengthInSeconds}");
-        return new Animation
-        {
-            Duration = TimeSpan.FromSeconds(animationLengthInSeconds),
-            Delay = TimeSpan.FromSeconds(2),
-            FillMode = FillMode.Forward,
-            IterationCount = new IterationCount(1),
-            Children =
-            {
-                new KeyFrame()
-                {
-                    Setters = {new Setter {Property = ScrollViewer.OffsetProperty, Value = new Vector(0, 0)}},
-                    Cue = new Cue(0)
-                },
-                new KeyFrame()
-                {
-                    Setters = {new Setter {Property = ScrollViewer.OffsetProperty, Value = new Vector(maxScroll, 0)}},
-                    Cue = new Cue(1)
-                }
-            }
-        };*/
-
         var animationLengthInSeconds = (maxScroll / 20) + 2.5d;
         Console.WriteLine($"Track animation length (s) = {animationLengthInSeconds}");
         return new Animation

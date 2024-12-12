@@ -30,9 +30,9 @@ public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
 
-    private CancellationTokenSource? _ctGoToIdleState;
-
-    private RoonPlayStatus _lastRoonPlayStatus = RoonPlayStatus.Stopped;
+    private CancellationTokenSource _ctGoToIdleState = new ();
+    private bool _isFirstRoonConnection = true;
+    private RoonPlayStatus _lastRoonPlayStatus = RoonPlayStatus.NotPlaying;
 
     public MainWindow()
     {
@@ -123,11 +123,13 @@ public partial class MainWindow : Window
         {
             _lastRoonPlayStatus = newStatus.RoonPlayStatus;
 
-            if (newStatus.RoonPlayStatus is RoonPlayStatus.Stopped or RoonPlayStatus.Paused)
+            if (newStatus.RoonPlayStatus == RoonPlayStatus.NotPlaying)
             {
                 _ctGoToIdleState?.Dispose();
                 _ctGoToIdleState = new CancellationTokenSource();
-                Task.Run(() => SetIdleState(false, _ctGoToIdleState.Token));
+                //Task.Run(() => SetIdleState(false, _ctGoToIdleState.Token));
+                await SetIdleState(false, _ctGoToIdleState.Token);
+                
             }
             else
             {
@@ -144,7 +146,11 @@ public partial class MainWindow : Window
 
     private async void OnConnectedToRoon()
     {
-        await SetIdleState(true, CancellationToken.None);
+        if (_isFirstRoonConnection)
+        {
+            _isFirstRoonConnection = false;
+            await SetIdleState(true, _ctGoToIdleState.Token);
+        }
     }
 
     private void OnDisconnectedFromRoon()

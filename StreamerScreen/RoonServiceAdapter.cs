@@ -137,7 +137,7 @@ public static class RoonServiceAdapter
     {
         RoonStatus.IsConnectedToRoon = false;
         RoonStatus.ActiveZone = null;
-        RoonStatus.RoonPlayStatus = RoonPlayStatus.Stopped;
+        RoonStatus.RoonPlayStatus = RoonPlayStatus.NotPlaying;
         RoonStatus.RoonConnection = null;
         if (OnDisconnectedFromRoon != null)
         {

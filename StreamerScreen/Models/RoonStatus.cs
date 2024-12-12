@@ -17,8 +17,7 @@ public class RoonStatus
         RoonPlayStatus = zone.State switch
         {
             RoonApiTransport.EState.playing => RoonPlayStatus.Playing,
-            RoonApiTransport.EState.paused => RoonPlayStatus.Paused,
-            _ => RoonPlayStatus.Stopped
+            _ => RoonPlayStatus.NotPlaying
         };
         
         ActiveZone ??= new RoonZone();
@@ -50,7 +49,7 @@ public class RoonZone
 
 public enum RoonPlayStatus
 {
-    Stopped, Playing, Paused
+    Playing, NotPlaying 
 }
 
 public class RoonConnection
