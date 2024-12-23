@@ -5,7 +5,6 @@ using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 using RoonApiLib;

@@ -99,7 +99,7 @@ public class ZoneViewModel : ViewModelBase
         {
             _imageKey = zone.AlbumArtImageKey;
             var url =
-                $"http://{connection.ServerAddress}:{connection.HttpPort}/api/image/{_imageKey}?scale=fit&width=800&height=600";
+                $"http://{connection.ServerAddress}:{connection.HttpPort}/api/image/{_imageKey}?scale=fit&width=1024&height=768";
             var bmp = await ImageHelper.LoadFromWeb(new Uri(url));
             SetProperty(ref _cover, bmp, nameof(Cover));
             SetProperty(ref _progressColor, CalculateProgressColor(), nameof(ProgressColor));

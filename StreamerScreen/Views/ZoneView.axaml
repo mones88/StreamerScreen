@@ -15,16 +15,7 @@
     <UserControl.Styles>
         <Style Selector="Image.bg">
             <Setter Property="Effect" Value="blur(60)"></Setter>
-            <Style.Animations>
-                <Animation Duration="0:0:5" IterationCount="INFINITE" PlaybackDirection="Alternate">
-                    <KeyFrame Cue="0%">
-                        <Setter Property="Margin" Value="-5"></Setter>
-                    </KeyFrame>
-                    <KeyFrame Cue="100%">
-                        <Setter Property="Margin" Value="-40"></Setter>
-                    </KeyFrame>
-                </Animation>
-            </Style.Animations>
+            <Setter Property="Margin" Value="-150"></Setter>
         </Style>
 
     </UserControl.Styles>
