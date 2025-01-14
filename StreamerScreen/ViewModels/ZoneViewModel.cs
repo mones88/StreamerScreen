@@ -98,11 +98,19 @@ public class ZoneViewModel : ViewModelBase
         if (_imageKey != zone.AlbumArtImageKey)
         {
             _imageKey = zone.AlbumArtImageKey;
-            var url =
-                $"http://{connection.ServerAddress}:{connection.HttpPort}/api/image/{_imageKey}?scale=fit&width=1024&height=768";
-            var bmp = await ImageHelper.LoadFromWeb(new Uri(url));
-            SetProperty(ref _cover, bmp, nameof(Cover));
-            SetProperty(ref _progressColor, CalculateProgressColor(), nameof(ProgressColor));
+            if (_imageKey != null)
+            {
+                var url =
+                    $"http://{connection.ServerAddress}:{connection.HttpPort}/api/image/{_imageKey}?scale=fit&width=1024&height=768";
+                var bmp = await ImageHelper.LoadFromWeb(new Uri(url));
+                SetProperty(ref _cover, bmp, nameof(Cover));
+                SetProperty(ref _progressColor, CalculateProgressColor(), nameof(ProgressColor));
+            }
+            else
+            {
+                SetProperty(ref _cover, null, nameof(Cover));
+                SetProperty(ref _progressColor, new SolidColorBrush(Colors.Green), nameof(ProgressColor));
+            }
         }
     }
 
